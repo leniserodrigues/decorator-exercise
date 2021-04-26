@@ -23,19 +23,20 @@ class Resp
     # body é uma string
     # headers é um hash {'key' => 'value'}
     attr_accessor :status, :body, :headers
-    def initialize(status, body)
+    def initialize(status:nil, body:nil, headers:{})
         @status = status
         @body = body
+        @headers = headers
     end
     def to_s
-        "{status code: #{status}, body: #{body}}"
+        "{status code: #{status}, body: #{body}, headers: #{headers}}"
     end
 end
 
 # logo um echo server responde sempre 200 com hello world
 class ServerHandler
     def self.handle(req)
-        return Resp.new(200, "hello world")
+        return Resp.new(status: 200, body: "hello world")
     end
 end
 
@@ -64,18 +65,34 @@ class Authentication < Middleware
     end
 end
 
+class Redirect < Middleware
+    def handle(req)
+        if req.path == '/oldpath'
+            Resp.new(status: 302, headers:{location: '/newplace'})
+        else
+            @next_middleware.handle(req)
+        end
+    end
+end
+
+class TimeCounter < Middleware
+    def handle(req)
+        start = Time.now
+        @next_middleware.handle(req)
+        stop = Time.now
+        delta = stop - start
+        puts ("it took %.3f s to execute request" % delta)
+    end
+end
+
 s = Log.new(Authentication.new(ServerHandler))
 s.handle(Req.new(headers:{user: 'Admin', pwd: 'admin'}))
+s = Log.new(Redirect.new(ServerHandler))
+s.handle(Req.new(path:'/oldpath'))
+s = Log.new(TimeCounter.new(ServerHandler))
 s.handle(Req.new)
 
 
-# crie middleware / testes / projeto no github e a execução deles para decorar o echo server acima
-
-
-# Criar um Log para Logar Req xx antes de executar e Resp depois da execução
-# Negar requests (status 403) sem user=Admin pwd=admin nos headers
-
-# Contar tempo levado por cada requests
 # Metrificar quantidade de respostas por status code
 # Criar cache onde a chave é o path e que respeite o header Caching=<time>
 # Devolver 404 para qualquer path *php
