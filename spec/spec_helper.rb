@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
-require 'function'
-require 'pipeline'
-require 'sender'
-require 'time_parser'
-require 'user'
+require 'middleware'
+require 'server'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
